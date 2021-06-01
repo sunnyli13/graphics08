@@ -14,13 +14,97 @@
           screen s
           zbuffer zb
   Returns:
-
   Fills in polygon i by drawing consecutive horizontal (or vertical) lines.
-
   Color should be set differently for each polygon.
   ====================*/
 void scanline_convert( struct matrix *points, int i, screen s, zbuffer zb ) {
+  double x0, x1, y0, y1, y2, z0, z1, dx0, dx1, dx1_1, dz0, dz1, dz1_1;
+  double xt, xm, xb, yt, ym, yb, zt, zm, zbot, y;
+  int top, mid, bot; 
+  color c;
+  c.red = rand() %  255;
+  c.blue = rand() % 255;
+  c.green = rand() % 255;
+  //setup
+  y0 = points->m[1][i];
+  y1 = points->m[1][i+1];
+  y2 = points->m[1][i+2];
+  //find bot, top, mid
+  if( y0 <= y1 && y0 <= y2) {
+    bot = i;
+    if(y1 <= y2) {
+      mid = i+1;
+      top = i+2;
+    }
+    else{
+      mid = i+2;
+      top = i+1;
+    }
+  }
+  else if(y1 <= y0 && y1 <= y2) {
+    bot = i+1;
+    if(y0 <= y2) {
+      mid = i;
+      top = i+2;
+    }
+    else{
+      mid = i+2;
+      top = i;
+    }
+  }
+  else{
+    bot = i+2;
+    if(y0 <= y1) {
+      mid = i;
+      top = i+1;
+    }
+    else{
+      mid = i+1;
+      top = i;
+    }
+  }
+  
+  xt = points->m[0][top];
+  xm = points->m[0][mid];
+  xb = points->m[0][bot];
 
+  yt = points->m[1][top];
+  ym = points->m[1][mid];
+  yb = points->m[1][bot];
+  
+  zt = points->m[2][top];
+  zm = points->m[2][mid];
+  zbot = points->m[2][bot];
+
+  x0 = xb;
+  x1 = xb;
+  z0 = zbot;
+  z1 = zbot;
+  y = yb;
+
+  dx0 = (xt - xb) / (yt - yb + 1);
+  dx1 = (xm - xb) / (ym - yb + 1);
+  dx1_1 = (xt - xm) / (yt - ym + 1);
+  dz0 = (zt - zbot) / (yt - yb + 1);
+  dz1 = (zm - zbot) / (ym - yb + 1);
+  dz1_1 = (zt - zm) / (yt - ym + 1);
+
+  while(y < ym){
+    draw_line(x0, y, z0, x1, y, z1, s, zb, c);
+    x0 += dx0;
+    x1 += dx1;
+    z0 += dz0;
+    z1 += dz1;
+    y += 1;
+  } 
+  while(y < yt){
+    draw_line(x0, y, z0, xm, y, zm, s, zb, c);
+    x0 += dx0;
+    xm += dx1_1;
+    z0 += dz0;
+    zm += dz1_1;
+    y += 1;
+  }
 }
 
 /*======== void add_polygon() ==========
@@ -70,28 +154,7 @@ void draw_polygons( struct matrix *polygons, screen s, zbuffer zb, color c ) {
     normal = calculate_normal(polygons, point);
 
     if ( normal[2] > 0 ) {
-
-      draw_line( polygons->m[0][point],
-                 polygons->m[1][point],
-                 polygons->m[2][point],
-                 polygons->m[0][point+1],
-                 polygons->m[1][point+1],
-                 polygons->m[2][point+1],
-                 s, zb, c);
-      draw_line( polygons->m[0][point+2],
-                 polygons->m[1][point+2],
-                 polygons->m[2][point+2],
-                 polygons->m[0][point+1],
-                 polygons->m[1][point+1],
-                 polygons->m[2][point+1],
-                 s, zb, c);
-      draw_line( polygons->m[0][point],
-                 polygons->m[1][point],
-                 polygons->m[2][point],
-                 polygons->m[0][point+2],
-                 polygons->m[1][point+2],
-                 polygons->m[2][point+2],
-                 s, zb, c);
+      scanline_convert(polygons, point, s, zb);
     }
   }
 }
@@ -104,7 +167,6 @@ void draw_polygons( struct matrix *polygons, screen s, zbuffer zb, color c ) {
             double width
             double height
             double depth
-
   add the points for a rectagular prism whose
   upper-left-front corner is (x, y, z) with width,
   height and depth dimensions.
@@ -151,13 +213,10 @@ void add_box( struct matrix *polygons,
             double cz
             double r
             int step
-
   adds all the points for a sphere with center (cx, cy, cz)
   and radius r using step points per circle/semicircle.
-
   Since edges are drawn using 2 points, add each point twice,
   or add each point and then another point 1 pixel away.
-
   should call generate_sphere to create the necessary points
   ====================*/
 void add_sphere( struct matrix * edges,
@@ -288,10 +347,8 @@ struct matrix * generate_sphere(double cx, double cy, double cz,
             double r2
             double step
   Returns:
-
   adds all the points required for a torus with center (cx, cy, cz),
   circle radius r1 and torus radius r2 using step points per circle.
-
   should call generate_torus to create the necessary points
   ====================*/
 void add_torus( struct matrix * edges, 
@@ -391,7 +448,6 @@ struct matrix * generate_torus( double cx, double cy, double cz,
             double cy
             double r
             double step
-
   Adds the circle at (cx, cy) with radius r to edges
   ====================*/
 void add_circle( struct matrix *edges,
@@ -426,7 +482,6 @@ Inputs:   struct matrix *edges
          double y3
          double step
          int type
-
 Adds the curve bounded by the 4 points passsed as parameters
 of type specified in type (see matrix.h for curve type constants)
 to the matrix edges
@@ -497,8 +552,8 @@ add the line connecting (x0, y0, z0) to (x1, y1, z1) to points
 should use add_point
 ====================*/
 void add_edge( struct matrix * points, 
-	       double x0, double y0, double z0, 
-	       double x1, double y1, double z1) {
+         double x0, double y0, double z0, 
+         double x1, double y1, double z1) {
   add_point( points, x0, y0, z0 );
   add_point( points, x1, y1, z1 );
 }

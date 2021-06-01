@@ -1,7 +1,6 @@
 /*====================== display.c ========================
 Contains functions for basic manipulation of a screen 
 represented as a 2 dimensional array of colors.
-
 A color is an ordered triple of ints, with each value standing
 for red, green and blue respectively
 ==================================================*/
@@ -25,13 +24,10 @@ Inputs:   screen s
          int y
 Returns:
 Sets the color at pixel x, y to the color represented by c
-
 Note that s[0][0] will be the upper left hand corner of the screen.
-
 If you wish to change this behavior, you can change the indicies
 of s that get set. For example, using s[x][YRES-1-y] will have
 pixel 0, 0 located at the lower left corner of the screen
-
 dw
 ====================*/
 void plot( screen s, zbuffer zb, color c, int x, int y, double z) {
@@ -44,7 +40,6 @@ void plot( screen s, zbuffer zb, color c, int x, int y, double z) {
 Inputs:   screen s
 Returns:
 Sets every color in screen s to the default color.
-
 dw
 ====================*/
 void clear_screen( screen s ) {
@@ -130,36 +125,36 @@ void save_ppm_ascii( screen s, char *file) {
 Inputs: screen s
         char *file
 Returns:
-
 Saves the screen stored in s to the filename represented by file.
-
 If the extension for file is an image format supported by the "convert"
 command, the image will be saved in that format.
-
 dw
 ====================*/
 void save_extension( screen s, char *file) {
 
-  screen tmp;
-  int x, y;
+  int x, y; 
+  FILE *f; 
+  char line[256]; 
 
-  for ( y=0; y < YRES; y++ ) {
-    for ( x=0; x < XRES; x++)
-      tmp[y][x] = s[x][y];
-  }
+  sprintf(line, "convert - %s", file); 
 
-  stbi_write_png(file, XRES, YRES, 3, tmp, 3 * XRES);
+  f = popen(line, "w"); 
+  fprintf(f, "P3\n%d %d\n%d\n", XRES, YRES, MAX_COLOR); 
+  for ( y=0; y < YRES; y++ ) { 
+    for ( x=0; x < XRES; x++) 
+
+    fprintf(f, "%d %d %d ", s[x][y].red, s[x][y].green, s[x][y].blue); 
+    fprintf(f, "\n"); 
+  } 
+  pclose(f); 
 }
 
 
 /*======== void display() ==========
 Inputs:   screen s
 Returns:
-
 Will display the screen s on your monitor.
-
 Requires imagemagick to be installed.
-
 dw
 ====================*/
 void display( screen s) {
